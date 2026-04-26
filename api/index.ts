@@ -1,6 +1,7 @@
 import { readFile } from "node:fs/promises";
 import { type IncomingHttpHeaders, type IncomingMessage, type ServerResponse } from "node:http";
-import { resolve } from "node:path";
+import { dirname, resolve } from "node:path";
+import { fileURLToPath } from "node:url";
 import serverEntry from "../dist/server/index.js";
 
 function contentType(pathname: string): string {
@@ -37,13 +38,29 @@ export default async function handler(req: IncomingMessage, res: ServerResponse)
 
   // Serve Vite client assets generated in dist/client/assets.
   if (normalizedPathname.startsWith("/assets/")) {
+    const relativeAssetPath = normalizedPathname.slice(1);
+    const runtimeDir = dirname(fileURLToPath(import.meta.url));
+    const candidatePaths = [
+      resolve(process.cwd(), "dist", "client", relativeAssetPath),
+      resolve(runtimeDir, "..", "dist", "client", relativeAssetPath),
+      resolve(runtimeDir, "..", "..", "dist", "client", relativeAssetPath),
+      resolve("/var/task", "dist", "client", relativeAssetPath),
+    ];
     try {
-      const filePath = resolve(process.cwd(), "dist", "client", normalizedPathname.slice(1));
-      const body = await readFile(filePath);
-      res.statusCode = 200;
-      res.setHeader("Content-Type", contentType(normalizedPathname));
-      res.setHeader("Cache-Control", "public, max-age=31536000, immutable");
-      res.end(body);
+      for (const filePath of candidatePaths) {
+        try {
+          const body = await readFile(filePath);
+          res.statusCode = 200;
+          res.setHeader("Content-Type", contentType(normalizedPathname));
+          res.setHeader("Cache-Control", "public, max-age=31536000, immutable");
+          res.end(body);
+          return;
+        } catch {
+          // Try next candidate path.
+        }
+      }
+      res.statusCode = 404;
+      res.end("Not found");
       return;
     } catch {
       res.statusCode = 404;
