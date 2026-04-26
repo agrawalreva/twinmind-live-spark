@@ -29,14 +29,19 @@ export default async function handler(req: IncomingMessage, res: ServerResponse)
   const host = req.headers.host ?? "localhost";
   const protocol = req.headers["x-forwarded-proto"] ?? "https";
   const url = new URL(req.url ?? "/", `${protocol}://${host}`);
+  const normalizedPathname = url.pathname === "/api"
+    ? "/"
+    : url.pathname.startsWith("/api/")
+      ? url.pathname.slice(4)
+      : url.pathname;
 
   // Serve Vite client assets generated in dist/client/assets.
-  if (url.pathname.startsWith("/assets/")) {
+  if (normalizedPathname.startsWith("/assets/")) {
     try {
-      const filePath = resolve(process.cwd(), "dist", "client", url.pathname.slice(1));
+      const filePath = resolve(process.cwd(), "dist", "client", normalizedPathname.slice(1));
       const body = await readFile(filePath);
       res.statusCode = 200;
-      res.setHeader("Content-Type", contentType(url.pathname));
+      res.setHeader("Content-Type", contentType(normalizedPathname));
       res.setHeader("Cache-Control", "public, max-age=31536000, immutable");
       res.end(body);
       return;
@@ -47,7 +52,9 @@ export default async function handler(req: IncomingMessage, res: ServerResponse)
     }
   }
 
-  const request = new Request(url, {
+  const requestUrl = new URL(url.toString());
+  requestUrl.pathname = normalizedPathname;
+  const request = new Request(requestUrl, {
     method,
     headers: normalizeHeaders(req.headers),
     body: method === "GET" || method === "HEAD" ? undefined : req,
