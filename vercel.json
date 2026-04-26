@@ -1,5 +1,11 @@
 {
   "buildCommand": "npm run build",
+  "routes": [
+    { "src": "/(.*)", "dest": "api/index.ts" }
+  ]
+}
+{
+  "buildCommand": "npm run build",
   "outputDirectory": "dist",
   "rewrites": [{ "source": "/(.*)", "destination": "/index.html" }]
 }

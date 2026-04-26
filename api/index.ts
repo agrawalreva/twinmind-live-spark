@@ -1,0 +1,61 @@
+import { readFile } from "node:fs/promises";
+import { type IncomingHttpHeaders, type IncomingMessage, type ServerResponse } from "node:http";
+import { resolve } from "node:path";
+import serverEntry from "../dist/server/index.js";
+
+function contentType(pathname: string): string {
+  if (pathname.endsWith(".css")) return "text/css; charset=utf-8";
+  if (pathname.endsWith(".js")) return "application/javascript; charset=utf-8";
+  if (pathname.endsWith(".json")) return "application/json; charset=utf-8";
+  if (pathname.endsWith(".svg")) return "image/svg+xml";
+  if (pathname.endsWith(".png")) return "image/png";
+  if (pathname.endsWith(".jpg") || pathname.endsWith(".jpeg")) return "image/jpeg";
+  if (pathname.endsWith(".webp")) return "image/webp";
+  if (pathname.endsWith(".ico")) return "image/x-icon";
+  return "application/octet-stream";
+}
+
+function normalizeHeaders(headers: IncomingHttpHeaders): Record<string, string> {
+  const out: Record<string, string> = {};
+  Object.entries(headers).forEach(([key, value]) => {
+    if (typeof value === "string") out[key] = value;
+    else if (Array.isArray(value)) out[key] = value.join(", ");
+  });
+  return out;
+}
+
+export default async function handler(req: IncomingMessage, res: ServerResponse) {
+  const method = req.method ?? "GET";
+  const host = req.headers.host ?? "localhost";
+  const protocol = req.headers["x-forwarded-proto"] ?? "https";
+  const url = new URL(req.url ?? "/", `${protocol}://${host}`);
+
+  // Serve Vite client assets generated in dist/client/assets.
+  if (url.pathname.startsWith("/assets/")) {
+    try {
+      const filePath = resolve(process.cwd(), "dist", "client", url.pathname.slice(1));
+      const body = await readFile(filePath);
+      res.statusCode = 200;
+      res.setHeader("Content-Type", contentType(url.pathname));
+      res.setHeader("Cache-Control", "public, max-age=31536000, immutable");
+      res.end(body);
+      return;
+    } catch {
+      res.statusCode = 404;
+      res.end("Not found");
+      return;
+    }
+  }
+
+  const request = new Request(url, {
+    method,
+    headers: normalizeHeaders(req.headers),
+    body: method === "GET" || method === "HEAD" ? undefined : req,
+    duplex: "half",
+  } as RequestInit & { duplex: "half" });
+  const response = await serverEntry.fetch(request);
+  res.statusCode = response.status;
+  response.headers.forEach((value, key) => res.setHeader(key, value));
+  const buffer = Buffer.from(await response.arrayBuffer());
+  res.end(buffer);
+}
