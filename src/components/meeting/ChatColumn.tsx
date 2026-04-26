@@ -1,5 +1,7 @@
 import { Send } from "lucide-react";
-import { useEffect, useRef } from "react";
+import { type ReactNode, useEffect, useRef } from "react";
+import ReactMarkdown from "react-markdown";
+import { type Components } from "react-markdown";
 import { type Message } from "@/lib/settings";
 
 type Props = {
@@ -8,6 +10,32 @@ type Props = {
   isStreaming: boolean;
   onInputChange: (value: string) => void;
   onSend: () => void;
+};
+
+const markdownComponents: Components = {
+  p: ({ children }: { children?: ReactNode }) => (
+    <p style={{ margin: "0 0 8px 0", lineHeight: "1.5" }}>
+      {children}
+    </p>
+  ),
+  ul: ({ children }: { children?: ReactNode }) => (
+    <ul style={{ paddingLeft: "16px", margin: "6px 0" }}>
+      {children}
+    </ul>
+  ),
+  ol: ({ children }: { children?: ReactNode }) => (
+    <ol style={{ paddingLeft: "16px", margin: "6px 0" }}>
+      {children}
+    </ol>
+  ),
+  li: ({ children }: { children?: ReactNode }) => (
+    <li style={{ marginBottom: "6px", lineHeight: "1.5" }}>
+      {children}
+    </li>
+  ),
+  strong: ({ children }: { children?: ReactNode }) => (
+    <strong style={{ fontWeight: 500 }}>{children}</strong>
+  ),
 };
 
 export function ChatColumn({ messages, input, isStreaming, onInputChange, onSend }: Props) {
@@ -35,7 +63,13 @@ export function ChatColumn({ messages, input, isStreaming, onInputChange, onSend
               }
               style={message.role === "user" ? { backgroundColor: "var(--accent)" } : { color: "#374151" }}
             >
-              {message.content}
+              {message.role === "assistant" ? (
+                <ReactMarkdown components={markdownComponents}>
+                  {message.content}
+                </ReactMarkdown>
+              ) : (
+                message.content
+              )}
             </div>
           </div>
         ))}
