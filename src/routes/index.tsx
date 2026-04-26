@@ -16,7 +16,7 @@ export const Route = createFileRoute("/")({
       {
         name: "description",
         content:
-          "Live transcription, AI suggestions, and chat — a premium real-time conversation workspace.",
+          "Live transcription, AI suggestions, and chat in a premium real-time conversation workspace.",
       },
     ],
   }),
@@ -38,7 +38,7 @@ const batch1: Suggestion[] = [
   { type: "ask",  title: "What's their current MRR growth rate?",
     preview: "Anchors the conversation in concrete metrics before discussing pricing tiers." },
   { type: "fact", title: "Verify the 2024 SaaS churn benchmark",
-    preview: "The 5.6% figure mentioned may be outdated — recent reports suggest a higher median." },
+    preview: "The 5.6% figure mentioned may be outdated. Recent reports suggest a higher median." },
   { type: "talk", title: "Mention the new enterprise SSO rollout",
     preview: "Aligns directly with the security concerns the prospect raised earlier in the call." },
 ];
@@ -46,7 +46,7 @@ const batch1: Suggestion[] = [
 const batch2: Suggestion[] = [
   { type: "clarify", title: "Clarify the integration timeline",
     preview: "Their team seems unsure whether onboarding includes data migration support." },
-  { type: "answer",  title: "Yes — annual plans include a 15% discount",
+  { type: "answer",  title: "Yes, annual plans include a 15% discount",
     preview: "Combined with quarterly business reviews and priority support on the Growth tier." },
   { type: "ask",     title: "Who else is involved in this decision?",
     preview: "Identifying additional stakeholders early helps tailor the next demo session." },
@@ -124,7 +124,7 @@ function TranscriptColumn() {
         <div className="space-y-3 text-sm leading-relaxed text-muted-foreground">
           <p>This is where your live transcript will appear as you speak…</p>
           <p>
-            Audio is being captured and converted in real time — segments will stream
+            Audio is being captured and converted in real time. Segments will stream
             into this panel sentence by sentence.
           </p>
           <p>Speakers will be labeled automatically once the conversation begins.</p>
@@ -221,7 +221,10 @@ function ChatColumn() {
         </div>
 
         <div className="flex justify-start">
-          <div className="max-w-[85%] rounded-2xl rounded-bl-sm border border-primary/30 bg-card px-4 py-2.5 text-sm leading-relaxed text-primary shadow-card">
+          <div
+            className="max-w-[85%] rounded-2xl rounded-bl-sm border border-primary/30 bg-card px-4 py-2.5 text-sm leading-relaxed shadow-card"
+            style={{ color: "#374151" }}
+          >
             <p>For a team of that size, the Growth plan typically offers the best value.</p>
             <p className="mt-1.5">It includes priority support, advanced analytics, and unlimited integrations.</p>
             <p className="mt-1.5">You may also bundle annual billing for a 15% discount on the total contract.</p>
