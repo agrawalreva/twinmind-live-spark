@@ -30,9 +30,24 @@ export function SuggestionsColumn({
     <section className="flex h-full min-h-0 flex-col border-r" style={{ borderColor: "var(--divider)" }}>
       <div className="flex items-start justify-between px-6 pt-6 pb-4">
         <div>
-          <h2 className="text-base font-semibold text-primary">Live Suggestions</h2>
+          <h2 className="text-base font-semibold text-primary">
+            Live Suggestions
+            <span
+              style={{
+                background: "#E6F1FB",
+                color: "#1B5F8C",
+                fontSize: "11px",
+                fontWeight: 500,
+                padding: "2px 10px",
+                borderRadius: "999px",
+                marginLeft: "8px",
+                textTransform: "capitalize",
+              }}
+            >
+              {meetingType || "detecting..."}
+            </span>
+          </h2>
           <p className="text-xs text-muted-foreground">AI-generated cues from your conversation</p>
-          <p className="mt-1 text-[11px] text-muted-foreground">Type: {meetingType}</p>
         </div>
         <div key={refreshKey} className="progress-ring progress-ring-animate" aria-label="Refresh in 30s">
           <button type="button" onClick={onRefresh} className="text-primary transition-colors hover:text-accent">

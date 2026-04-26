@@ -14,6 +14,20 @@ type UseAudioCaptureResult = {
   stopRecording: () => void;
 };
 
+function extractNewText(fullText: string, previousText: string): string {
+  if (!previousText) return fullText;
+  const overlapIndex = fullText.indexOf(previousText.slice(-100));
+  if (overlapIndex === -1) {
+    const breakPoint = fullText.search(/[.!?]\s/);
+    return breakPoint > 0 ? fullText.slice(breakPoint + 2) : fullText;
+  }
+  const rawNew = fullText.slice(
+    overlapIndex + previousText.slice(-100).length,
+  ).trim();
+  const firstCap = rawNew.search(/[A-Z]/);
+  return firstCap > 0 ? rawNew.slice(firstCap) : rawNew;
+}
+
 export function useAudioCapture({ apiKey }: UseAudioCaptureArgs): UseAudioCaptureResult {
   const [isRecording, setIsRecording] = useState(false);
   const [isTranscribing, setIsTranscribing] = useState(false);
@@ -30,25 +44,17 @@ export function useAudioCapture({ apiKey }: UseAudioCaptureArgs): UseAudioCaptur
     setIsTranscribing(true);
     const audioType = chunksRef.current[0]?.type || "audio/webm";
     const fullBlob = new Blob(chunksRef.current, { type: audioType });
-    console.log("Sending to Whisper, blob size:", fullBlob.size);
     try {
       const fullText = (await transcribeAudio(fullBlob, apiKey)).trim();
-      console.log("Transcript received:", fullText);
       if (!fullText) return;
       if (!lastTranscriptRef.current) {
-        console.log("Setting transcript:", fullText);
         setTranscript((prev) => [...prev, { text: fullText, timestamp: new Date() }]);
         lastTranscriptRef.current = fullText;
         return;
       }
-      const newText = fullText.slice(lastTranscriptRef.current.length).trim();
+      const newText = extractNewText(fullText, lastTranscriptRef.current).trim();
       if (newText.length > 20) {
-        const sentenceEnd = newText.search(/[.!?][^.!?]*$/);
-        const cleanText = sentenceEnd > 20
-          ? newText.slice(0, sentenceEnd + 1).trim()
-          : newText;
-        console.log("Setting transcript:", cleanText);
-        setTranscript((prev) => [...prev, { text: cleanText, timestamp: new Date() }]);
+        setTranscript((prev) => [...prev, { text: newText, timestamp: new Date() }]);
         lastTranscriptRef.current = fullText;
       } else {
         lastTranscriptRef.current = fullText;
@@ -62,7 +68,6 @@ export function useAudioCapture({ apiKey }: UseAudioCaptureArgs): UseAudioCaptur
   }, [apiKey]);
 
   const startRecording = useCallback(async () => {
-    console.log("startRecording called");
     if (typeof window === "undefined") return;
     if (!window.MediaRecorder || !window.navigator?.mediaDevices?.getUserMedia) return;
     try {
@@ -75,13 +80,11 @@ export function useAudioCapture({ apiKey }: UseAudioCaptureArgs): UseAudioCaptur
           : MediaRecorder.isTypeSupported("audio/webm")
             ? "audio/webm"
             : "";
-      console.log("MediaRecorder created with mimeType:", mimeType);
       const recorder = mimeType ? new MediaRecorder(stream, { mimeType }) : new MediaRecorder(stream);
       mediaRecorderRef.current = recorder;
       chunksRef.current = [];
       lastTranscriptRef.current = "";
       recorder.addEventListener("dataavailable", (event) => {
-        console.log("Audio chunk received, size:", event.data.size);
         if (!event.data.size) return;
         chunksRef.current.push(event.data);
       });

@@ -69,14 +69,12 @@ export function useSuggestions({
     if (!text.trim()) return;
     setIsLoading(true);
     try {
-      console.log("Generating suggestions for transcript:", text.slice(0, 100));
       const suggestions = await generateSuggestions(
         text,
         previousSuggestionsRef.current,
         meetingTypeRef.current,
         settingsRef.current,
       );
-      console.log("Suggestions received:", suggestions);
       setSuggestionBatches((prev) => [{ timestamp: new Date(), suggestions }, ...prev]);
       setPreviousSuggestions((prev) => {
         const next = [...prev, ...suggestions.map((s) => s.title)];
@@ -113,26 +111,15 @@ export function useSuggestions({
 
   useEffect(() => {
     if (!isRecording) return;
-    console.log("Suggestions interval started");
     const id = window.setInterval(() => {
-      console.log(
-        "Interval tick, isRecording:",
-        isRecordingRef.current,
-        "transcript entries:",
-        transcriptRef.current.length,
-      );
       if (!isRecordingRef.current) return;
       const intervalTranscriptText = transcriptRef.current
         .map((entry) => entry.text)
         .join("\n")
         .slice(-settingsRef.current.suggestionContextWindow);
-      console.log("Suggestion interval fired, transcript length:", transcriptRef.current.length);
       void generateAndStoreSuggestions(intervalTranscriptText);
     }, REFRESH_INTERVAL_MS);
-    return () => {
-      console.log("Suggestions interval cleared");
-      window.clearInterval(id);
-    };
+    return () => window.clearInterval(id);
   }, [isRecording, generateAndStoreSuggestions]);
 
   useEffect(() => {
